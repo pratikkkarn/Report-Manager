@@ -381,7 +381,7 @@
             return `<tr><td class="w-col-lbl" style="text-align:right; padding-right:20px;">${lbl}</td><td colspan="2"><input type="text" class="brand-input" value="${val}"></td></tr>`;
         }
 
-        // --- 3. DIMENSIONS SECTION ---
+        // --- 3. DIMENSIONS SECTION (UPDATED with classes) ---
         function addDimensionsPage() {
             const sId = `dim-section-${Date.now()}`;
             const div = document.createElement('div');
@@ -412,12 +412,12 @@
                         </tr>
                         <tr>
                             <td colspan="2" style="text-align:right; font-weight:bold;">DOOR HEIGHT</td>
-                            <td colspan="2"><input type="text" class="dim-input-text" value="0.0 ft" style="text-align:left; font-weight:bold;"></td>
+                            <td colspan="2"><input type="text" class="dim-input-text door-input" value="0.0 ft" style="text-align:left; font-weight:bold;"></td>
                             <td></td>
                         </tr>
                         <tr>
                             <td colspan="2" style="text-align:right; font-weight:bold;">CEILING HEIGHT</td>
-                            <td colspan="2"><input type="text" class="dim-input-text" value="0.0 ft" style="text-align:left; font-weight:bold;"></td>
+                            <td colspan="2"><input type="text" class="dim-input-text ceil-input" value="0.0 ft" style="text-align:left; font-weight:bold;"></td>
                             <td></td>
                         </tr>
                     </tfoot>
@@ -560,7 +560,7 @@
             document.getElementById(`f-${id}`).value = ""; 
         }
 
-        // --- 5. PDF GENERATOR (FIXED PAGINATION) ---
+        // --- 5. PDF GENERATOR (UPDATED LOGIC) ---
         function generatePDF() {
             const container = document.getElementById('print-container');
             container.innerHTML = ''; 
@@ -574,27 +574,37 @@
             const sections = document.querySelectorAll('.report-section');
 
             sections.forEach(section => {
-                // DEFECTS (Manual Chunking)
+                // DEFECTS (Manual Chunking with Live Value Fix)
                 if (section.classList.contains('defect-section')) {
                     const title = section.querySelector('.editable-title').innerText;
-                    // Robust clone for PDF
+                    
+                    // Create a clone for PDF structure
                     const clone = section.cloneNode(true);
                     
-                    // Convert inputs to text for table cells
-                    clone.querySelectorAll('textarea').forEach(ta => {
-                        const s = document.createElement('div'); s.className='pdf-text'; s.innerText = ta.value;
+                    // --- FIX FOR TEXTAREAS AND SELECTS: Read from ORIGINAL section ---
+                    const origTextareas = section.querySelectorAll('textarea');
+                    clone.querySelectorAll('textarea').forEach((ta, index) => {
+                        const s = document.createElement('div'); 
+                        s.className='pdf-text'; 
+                        s.innerText = origTextareas[index].value; // Grab live value
                         ta.parentNode.replaceChild(s, ta);
                     });
-                    clone.querySelectorAll('select').forEach(sel => {
+
+                    const origSelects = section.querySelectorAll('select');
+                    clone.querySelectorAll('select').forEach((sel, index) => {
                         const s = document.createElement('div'); 
                         s.className='pdf-val'; 
-                        if(sel.selectedIndex > 0) {
-                            s.innerText = sel.options[sel.selectedIndex].text;
-                            if(sel.value==='MAJOR') s.style.color='red'; else if(sel.value==='MINOR') s.style.color='green';
-                        } else { s.innerText = "Select"; }
+                        const orig = origSelects[index]; // Grab live select element
+                        if(orig.selectedIndex > 0) {
+                            s.innerText = orig.options[orig.selectedIndex].text;
+                            if(orig.value==='MAJOR') s.style.color='red'; else if(orig.value==='MINOR') s.style.color='green';
+                        } else { 
+                            s.innerText = ""; 
+                        }
                         sel.parentNode.replaceChild(s, sel);
                     });
-                    
+                    // ----------------------------------------------------------------
+
                     const rows = Array.from(clone.querySelectorAll('tbody tr'));
                     const CHUNK_SIZE = 4; 
 
@@ -622,7 +632,6 @@
                         table.innerHTML = `<thead>${section.querySelector('thead').innerHTML}</thead><tbody></tbody>`;
                         
                         chunk.forEach(r => {
-                            // Clean up image controls in clone
                             r.querySelectorAll('button').forEach(b => b.remove());
                             r.querySelectorAll('.action-btns').forEach(d => d.remove());
                             const img = r.querySelector('img');
@@ -636,16 +645,21 @@
                     }
                 }
                 
-                // DIMENSIONS (Manual Chunking)
+                // DIMENSIONS (Manual Chunking with Footer Class Fix)
                 else if (section.classList.contains('dim-section')) {
                     const title = section.querySelector('.editable-title').innerText;
                     const rows = Array.from(section.querySelectorAll('tbody tr'));
-                    const CHUNK_SIZE = 12; // More rows fit on dimensions page
+                    const CHUNK_SIZE = 12; 
 
                     // Clone Footer values first
                     const totalVal = section.querySelector('.dim-total-val').innerText;
-                    const doorVal = section.querySelectorAll('.dim-input-text')[1].value; // 7.8ft
-                    const ceilVal = section.querySelectorAll('.dim-input-text')[2].value; // 9.3ft
+                    
+                    // --- UPDATED SELECTION LOGIC using specific classes ---
+                    const doorInput = section.querySelector('.door-input');
+                    const ceilInput = section.querySelector('.ceil-input');
+                    const doorVal = doorInput ? doorInput.value : "0.0 ft";
+                    const ceilVal = ceilInput ? ceilInput.value : "0.0 ft";
+                    // ----------------------------------------------------
 
                     for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
                         const chunk = rows.slice(i, i + CHUNK_SIZE);
@@ -668,16 +682,7 @@
 
                         const table = document.createElement('table');
                         table.className = 'dim-table';
-                        // Clean header for PDF (No action column)
-                        const headerHTML = section.querySelector('thead').innerHTML;
-                        table.innerHTML = `<thead>${headerHTML}</thead><tbody></tbody>`;
-                        const headerRow = table.querySelector('thead tr');
-                        if(headerRow && headerRow.cells.length > 3) headerRow.deleteCell(headerRow.cells.length-1);
-                        // Subheader row too
-                        const subHeader = table.querySelectorAll('thead tr')[1];
-                        // Dimensions table structure is complex, simplified for PDF:
-                        // Just use the first row of header which has "Action" at end
-                        // Actually easier to rebuild header for PDF:
+                        
                         table.innerHTML = `
                             <thead>
                                 <tr>
@@ -729,15 +734,14 @@
                 }
 
                 else {
-                    // GENERIC CLONE (WATER, GALLERY) - Single Page usually
+                    // GENERIC CLONE (WATER, GALLERY) - Single Page
                     const page = document.createElement('div');
                     page.className = 'pdf-page';
                     const content = section.cloneNode(true);
                     
-                    // Clean up UI buttons
                     content.querySelectorAll('button').forEach(b => b.remove());
 
-                    // --- FIX ALIGNMENT FOR WATER TABLE CELLS ---
+                    // Fix Alignment for Water
                     content.querySelectorAll('.w-col-val').forEach(td => {
                         td.style.textAlign = 'left'; 
                     });
@@ -747,7 +751,6 @@
                         const s = document.createElement('span'); s.innerText = inp.value;
                         s.style.fontWeight = "bold"; s.style.display="block"; 
                         
-                        // --- CHECK IF IT'S A VALUE INPUT AND ALIGN LEFT ---
                         if(inp.classList.contains('val-input')) {
                              s.style.textAlign="left"; 
                              s.style.paddingLeft="5px"; 
@@ -792,5 +795,4 @@
         }
     </script>
 </body>
-
 </html>
