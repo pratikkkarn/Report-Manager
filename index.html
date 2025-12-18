@@ -7,14 +7,14 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-   
+  
     <style>
         /* =========================================
             GLOBAL STYLES
             ========================================= */
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; padding: 20px; margin: 0; }
-       
+      
         /* Controls */
         .controls {
             text-align: center; margin-bottom: 20px; position: sticky; top: 0; z-index: 100;
@@ -24,7 +24,7 @@
         }
         .mobile-toggle { display: none; }
         .controls-list { display: block; }
-       
+      
         button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin: 0 5px; transition: 0.2s; white-space: nowrap;}
         button:hover { opacity: 0.9; transform: scale(1.02); }
         .btn-action { background: #007bff; color: white; }
@@ -44,30 +44,29 @@
             padding: 5px 10px; font-size: 12px; border-radius: 4px; z-index: 5;
         }
         .editable-title { text-align: center; border-bottom: 3px solid #333; padding-bottom: 10px; margin-top: 0; outline: none; color: #333; min-width: 300px; }
-       
+      
         /* Client Grid Styles Added */
         .client-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px; }
         .client-group { display: flex; flex-direction: column; text-align: left; }
         .client-group label { font-size: 12px; font-weight: bold; color: #666; margin-bottom: 5px; text-transform: uppercase; }
         .client-group input { padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-family: inherit; }
-
         /* Tables Desktop */
         .defect-table, .water-table, .dim-table, .gallery-table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
         th, td { border: 1px solid #ccc; padding: 8px; vertical-align: middle; word-wrap: break-word; }
         th { background: #333; color: white; text-align: center; }
-       
+      
         /* Column Widths (Desktop) */
         .col-id { width: 40px; text-align: center; font-weight: bold; }
         .col-img { width: 35%; text-align: center; }
         .col-desc { width: 35%; }
         .col-status { width: 20%; text-align: center; }
-       
+      
         .w-col-lbl { width: 25%; font-weight: bold; }
         .w-col-img { width: 50%; text-align: center; }
         .w-col-val { width: 25%; text-align: right; }
-       
+      
         .grey-header { background-color: #e9ecef; padding: 10px; text-align: center; font-weight: bold; text-transform: uppercase; font-size: 1.1em; margin: 20px 0 10px 0; border-radius: 4px; outline: none; min-width: 300px; }
-        
+      
         /* Images & Inputs */
         .img-placeholder {
             background: #f8f9fa; height: 160px; border: 2px dashed #ccc; border-radius: 4px;
@@ -78,17 +77,17 @@
         .action-btn { background: #fff; color: #333; padding: 6px 12px; border-radius: 15px; font-size: 12px; border: 1px solid #ccc; cursor: pointer; }
         textarea { width: 100%; height: 120px; resize: none; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px;}
         select { padding: 8px; width: 100%; margin-bottom: 5px; font-weight: bold; border-radius: 4px; border: 1px solid #ccc; font-size: 14px;}
-       
+      
         .val-input { width: 80px; padding: 8px; font-size: 1.1em; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; }
         .brand-input { width: 100%; padding: 8px; font-size: 1em; border: 1px solid #ccc; border-radius: 4px; }
         .dim-input-text { width: 100%; border: none; padding: 5px; font-family: inherit; font-size: 14px; text-align: center; }
         .dim-input-num { width: 100%; border: none; padding: 5px; font-family: inherit; font-size: 14px; text-align: center; background: #f9f9f9; }
-       
+      
         /* Total Area Red */
         .dim-total-val { color: red !important; font-weight: 900 !important; font-size: 1.2em !important; }
         /* PDF Hidden Container */
         #print-container { display: none; width: 794px; background: #555; }
-       
+      
         /* PDF Page Styling */
         .pdf-page {
             width: 794px;
@@ -100,17 +99,27 @@
             position: relative;
             page-break-after: always;
         }
-
+        /* Watermark Style */
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%;
+            opacity: 0.15;
+            z-index: 1;
+            pointer-events: none;
+            user-select: none;
+        }
         /* PDF Cover Specific Added Styles */
         .pdf-cover-box { border: 10px double #333; height: 1000px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 40px; margin: 20px; }
         .cover-h1 { font-size: 40px; margin-bottom: 10px; text-transform: uppercase; }
         .cover-p { font-size: 18px; color: #666; margin-bottom: 60px; letter-spacing: 2px; }
         .cover-table { width: 100% !important; max-width: 500px; border: none !important; }
         .cover-table td { border: none !important; border-bottom: 1px solid #eee !important; padding: 15px !important; font-size: 16px; }
-
         .pdf-page-full { padding: 0; margin: 0; width: 794px; height: 1122px; position: relative; background: white; page-break-after: always; }
         .pdf-page-full img { width: 100%; height: 100%; object-fit: fill; display: block; }
-       
+      
         .pdf-title { text-align: center; border-bottom: 3px solid #333; padding-bottom: 10px; margin-top: 0; text-transform: uppercase; font-size: 22px; }
         .pdf-text { white-space: pre-wrap; font-size: 13px; line-height: 1.4; display: block; }
         .pdf-val { font-weight: bold; font-size: 1.2em; text-align: center; display: block;}
@@ -144,7 +153,7 @@
             #workspace-container th,
             #workspace-container td,
             #workspace-container tr { display: block; width: 100%; min-width: 0 !important; }
-            
+          
             #workspace-container th { display: none; }
             #workspace-container td { border: none; padding: 0; }
             #workspace-container .defect-table tr { background: #fff; border: 1px solid #eee; margin-bottom: 10px; border-radius: 8px; padding: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: "header header" "img controls" "desc desc"; gap: 10px; }
@@ -170,23 +179,23 @@
             #workspace-container .dim-table thead tr:nth-child(2) th:nth-child(1),
             #workspace-container .dim-table thead tr:nth-child(2) th:nth-child(2),
             #workspace-container .dim-table thead tr:first-child th:nth-child(3) { color: transparent !important; position: relative; }
-            
+          
             #workspace-container .dim-table thead tr:nth-child(2) th:nth-child(1)::after { content: "LENGTH\A(ft)"; white-space: pre; color: #333; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
             #workspace-container .dim-table thead tr:nth-child(2) th:nth-child(2)::after { content: "WIDTH\A(ft)"; white-space: pre; color: #333; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
             #workspace-container .dim-table thead tr:first-child th:nth-child(3)::after { content: "AREA\A(sft)"; white-space: pre; color: #333; position: absolute; top: 50%; left: 65%; transform: translate(-50%, -50%); text-align: center; }
-            
+          
             #workspace-container .dim-table thead tr:first-child th:nth-child(1) { order: 1; }
             #workspace-container .dim-table thead tr:first-child th:nth-child(2) { display: none !important; }
             #workspace-container .dim-table thead tr:nth-child(2) th:nth-child(1) { order: 2; }
             #workspace-container .dim-table thead tr:nth-child(2) th:nth-child(2) { order: 3; }
             #workspace-container .dim-table thead tr:first-child th:nth-child(3) { order: 4; }
             #workspace-container .dim-table thead tr:first-child th:nth-child(4) { order: 5; }
-            
+          
             #workspace-container .dim-table tbody tr { display: grid !important; grid-template-columns: 28% 18% 18% 22% 14%; gap: 4px; margin-bottom: 5px; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px; }
-            
+          
             .dim-input-text { width: 100%; font-size: 11px; padding: 6px 2px; border: 1px solid #ddd; background: #fff !important; border-radius: 4px; font-weight: 600; text-align: left; }
             .dim-input-num { width: 100%; font-size: 11px; padding: 6px 2px; border: 1px solid #ddd; background: #fff !important; border-radius: 4px; text-align: center; }
-            
+          
             #workspace-container .dim-table td:last-child { display: flex; align-items: center; justify-content: center; padding-right: 5px; }
             #workspace-container .dim-table button { width: 100%; padding: 6px; font-size: 14px; background: #fee2e2; color: #dc3545; border: 1px solid #f5c6cb; border-radius: 4px; }
             #workspace-container .dim-table tfoot tr { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; border-radius: 4px; padding: 10px; margin-top: 5px; gap: 20px; }
@@ -204,7 +213,7 @@
                 padding: 5px;
                 border-radius: 6px;
             }
-            
+          
             #workspace-container .water-table .w-col-lbl {
                 width: calc(50% - 5px);
                 font-size: 11px;
@@ -214,19 +223,19 @@
                 width: calc(50% - 5px);
                 text-align: right;
             }
-            
+          
             #workspace-container .water-table .w-col-img {
                 width: 100%;
                 flex-grow: 0;
                 order: 3;
             }
-            
+          
             #workspace-container .water-table .img-placeholder {
                 height: 120px !important;
                 width: 100% !important;
             }
             .val-input { width: 100%; font-size: 12px; padding: 4px; height: 30px; }
-            
+          
             #workspace-container .brand-table tr {
                 flex-wrap: nowrap;
                 justify-content: space-between;
@@ -286,13 +295,12 @@
         let globalCounter = 0;
         let activeImageId = null;
         let stream = null;
-        
+      
         // Updated window.onload to include client page by default
-        window.onload = function() { 
+        window.onload = function() {
             addClientPage();
-            addDefectSection(); 
+            addDefectSection();
         };
-
         function toggleMenu() {
             const list = document.getElementById('controls-list');
             const arrow = document.getElementById('menu-arrow');
@@ -315,7 +323,6 @@
                 arrow.classList.add('fa-chevron-down');
             }
         }
-
         // New Client Details Feature
         function addClientPage() {
             if(document.getElementById('client-info-section')) return;
@@ -335,7 +342,6 @@
             `;
             document.getElementById('workspace-container').prepend(div);
         }
-
         function addDefectSection() {
             const sectionId = `section-${Date.now()}`;
             const div = document.createElement('div');
@@ -358,7 +364,7 @@
         function addWaterPage() {
             globalCounter++; const sId = `water-section-${Date.now()}`;
             const img1 = `w-img-${globalCounter}`; globalCounter++; const img2 = `w-img-${globalCounter}`;
-            
+          
             const div = document.createElement('div');
             div.className = 'report-section water-section';
             div.id = sId;
@@ -449,7 +455,7 @@
             const w = parseFloat(inputs[1].value) || 0;
             const area = (l * w).toFixed(2);
             row.querySelector('.area-val').value = area;
-            
+          
             let total = 0;
             document.getElementById(`table-${sId}`).querySelectorAll('.area-val').forEach(inp => {
                 total += parseFloat(inp.value) || 0;
@@ -469,7 +475,7 @@
             globalCounter++; const img2 = `gal-${globalCounter}`;
             globalCounter++; const img3 = `gal-${globalCounter}`;
             globalCounter++; const img4 = `gal-${globalCounter}`;
-            
+          
             const sId = `gallery-section-${Date.now()}`;
             const div = document.createElement('div');
             div.className = 'report-section gallery-section';
@@ -492,7 +498,7 @@
             div.scrollIntoView({behavior: 'smooth'});
         }
         function removeSection(id) { if(confirm("Delete this page?")) document.getElementById(id).remove(); }
-        
+      
         function addRowToSection(sid) {
             globalCounter++;
             const tbody = document.getElementById(sid).querySelector('tbody');
@@ -538,7 +544,7 @@
         async function cam(id) { activeImageId = id; try { stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}); document.getElementById('video-feed').srcObject=stream; document.getElementById('camera-modal').style.display='flex'; } catch(e){alert("Camera Error: Use HTTPS");} }
         function snapPhoto() { const v=document.getElementById('video-feed'); const c=document.getElementById('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; c.getContext('2d').drawImage(v,0,0); setImg(activeImageId,c.toDataURL('image/jpeg')); closeCamera(); }
         function closeCamera() { document.getElementById('camera-modal').style.display='none'; if(stream) stream.getTracks().forEach(t=>t.stop()); }
-        
+      
         function setImg(id,src) {
             const i=document.getElementById(id); i.src=src; i.style.display='block';
             document.getElementById(`btns-${id}`).style.display = 'none';
@@ -550,23 +556,28 @@
             document.getElementById(`retake-${id}`).style.display = 'none';
             document.getElementById(`f-${id}`).value = "";
         }
-
+        // Updated Watermark Helper Function
+        function injectWatermark(pageElement) {
+            const wm = document.createElement('img');
+            wm.src = 'mark.png';
+            wm.className = 'watermark';
+            pageElement.prepend(wm); // Prepend to place behind content
+        }
         // ========================================================
         // UPDATED PDF GENERATOR (NOW MERGES 1.PDF AUTOMATICALLY)
         // ========================================================
         async function generatePDF() {
             const container = document.getElementById('print-container');
             container.innerHTML = '';
-
             // --- Cover Page Logic Start ---
             const coverPage = document.createElement('div');
             coverPage.className = 'pdf-page';
+            injectWatermark(coverPage);
             const cName = document.getElementById('pdf-c-name')?.value || "N/A";
             const cDate = document.getElementById('pdf-c-date')?.value || "N/A";
             const cLoc = document.getElementById('pdf-c-loc')?.value || "N/A";
             const cInsp = document.getElementById('pdf-c-insp')?.value || "N/A";
-
-            coverPage.innerHTML = `
+            coverPage.innerHTML += `
                 <div class="pdf-cover-box">
                     <h1 class="cover-h1">INSPECTION REPORT</h1>
                     <p class="cover-p">Professional Audit Assessment</p>
@@ -580,15 +591,13 @@
             `;
             container.appendChild(coverPage);
             // --- Cover Page Logic End ---
-
             const sections = document.querySelectorAll('.report-section');
             sections.forEach(section => {
-                if(section.classList.contains('client-section')) return; // Original client section ignored in printing
-
+                if(section.classList.contains('client-section')) return;
                 if (section.classList.contains('defect-section')) {
                     const title = section.querySelector('.editable-title').innerText;
                     const clone = section.cloneNode(true);
-                    
+                  
                     const origTextareas = section.querySelectorAll('textarea');
                     clone.querySelectorAll('textarea').forEach((ta, index) => {
                         const s = document.createElement('div');
@@ -615,6 +624,7 @@
                         const chunk = rows.slice(i, i + CHUNK_SIZE);
                         const page = document.createElement('div');
                         page.className = 'pdf-page';
+                        injectWatermark(page);
                         if (i === 0) {
                             const h1 = document.createElement('h1');
                             h1.className = 'pdf-title'; h1.innerText = title;
@@ -631,7 +641,7 @@
                         const table = document.createElement('table');
                         table.className = 'defect-table';
                         table.innerHTML = `<thead>${section.querySelector('thead').innerHTML}</thead><tbody></tbody>`;
-                        
+                      
                         chunk.forEach(r => {
                             r.querySelectorAll('button').forEach(b => b.remove());
                             r.querySelectorAll('.action-btns').forEach(d => d.remove());
@@ -645,7 +655,7 @@
                         container.appendChild(page);
                     }
                 }
-                
+              
                 else if (section.classList.contains('dim-section')) {
                     const title = section.querySelector('.editable-title').innerText;
                     const rows = Array.from(section.querySelectorAll('tbody tr'));
@@ -659,6 +669,7 @@
                         const chunk = rows.slice(i, i + CHUNK_SIZE);
                         const page = document.createElement('div');
                         page.className = 'pdf-page';
+                        injectWatermark(page);
                         if (i === 0) {
                             const h1 = document.createElement('h1');
                             h1.className = 'pdf-title'; h1.innerText = title;
@@ -698,6 +709,7 @@
                 else {
                     const page = document.createElement('div');
                     page.className = 'pdf-page';
+                    injectWatermark(page);
                     const content = section.cloneNode(true);
                     content.querySelectorAll('button').forEach(b => b.remove());
                     content.querySelectorAll('.w-col-val').forEach(td => { td.style.textAlign = 'left'; });
@@ -708,7 +720,7 @@
                         else { s.style.textAlign="center"; }
                         inp.parentNode.replaceChild(s, inp);
                     });
-                    
+                  
                     content.querySelectorAll('.img-placeholder').forEach(pl => {
                          pl.style.border = "none";
                          const img = pl.querySelector('img');
@@ -743,7 +755,7 @@
                 const finalPdf = await PDFDocument.create();
                 const a4Width = 595.28;
                 const a4Height = 841.89;
-                
+              
                 const externalPdfDoc = await PDFDocument.load(existingPdfBytes);
                 for (let i = 0; i < externalPdfDoc.getPageCount(); i++) {
                     const [embeddedPage] = await finalPdf.embedPdf(externalPdfDoc, [i]);
@@ -756,7 +768,7 @@
                     const newPage = finalPdf.addPage([a4Width, a4Height]);
                     newPage.drawPage(embeddedPage, { x, y, width: scaledWidth, height: scaledHeight });
                 }
-                
+              
                 const reportArrayBuffer = await reportBlob.arrayBuffer();
                 const reportPdfDoc = await PDFDocument.load(reportArrayBuffer);
                 for (let i = 0; i < reportPdfDoc.getPageCount(); i++) {
@@ -770,7 +782,7 @@
                     const newPage = finalPdf.addPage([a4Width, a4Height]);
                     newPage.drawPage(embeddedPage, { x, y, width: scaledWidth, height: scaledHeight });
                 }
-                
+              
                 const finalPdfBytes = await finalPdf.save();
                 const downloadBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
                 const link = document.createElement('a');
