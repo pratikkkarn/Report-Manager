@@ -5,64 +5,61 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Inspection Report Manager</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    
+   
     <style>
         /* =========================================
-           GLOBAL STYLES
-           ========================================= */
+            GLOBAL STYLES
+            ========================================= */
         * { box-sizing: border-box; }
         body { font-family: 'Segoe UI', sans-serif; background-color: #f4f6f9; padding: 20px; margin: 0; }
-        
+       
         /* Controls */
         .controls {
             text-align: center; margin-bottom: 20px; position: sticky; top: 0; z-index: 100;
-            background: rgba(255,255,255,0.98); 
+            background: rgba(255,255,255,0.98);
             backdrop-filter: blur(5px); border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); border: 1px solid #ddd;
             padding: 10px;
         }
         .mobile-toggle { display: none; }
         .controls-list { display: block; }
-        
+       
         button { padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; margin: 0 5px; transition: 0.2s; white-space: nowrap;}
         button:hover { opacity: 0.9; transform: scale(1.02); }
         .btn-action { background: #007bff; color: white; }
-        .btn-water { background: #6f42c1; color: white; } 
+        .btn-water { background: #6f42c1; color: white; }
         .btn-dim { background: #ff9800; color: white; }
         .btn-gallery { background: #17a2b8; color: white; }
         .btn-dl { background: #28a745; color: white; }
-
         #workspace-container { max-width: 850px; margin: 0 auto; min-height: 800px; padding-bottom: 50px; }
-
         .report-section {
             background: white; padding: 30px; margin-bottom: 30px;
             box-shadow: 0 2px 15px rgba(0,0,0,0.08); border-radius: 8px; position: relative;
-            border: 1px solid #eee; overflow-x: auto; 
+            border: 1px solid #eee; overflow-x: auto;
         }
         .delete-section-btn {
             position: absolute; top: 10px; right: 10px; background: #dc3545; color: white;
             padding: 5px 10px; font-size: 12px; border-radius: 4px; z-index: 5;
         }
-
         .editable-title { text-align: center; border-bottom: 3px solid #333; padding-bottom: 10px; margin-top: 0; outline: none; color: #333; min-width: 300px; }
-        
+       
         /* Tables Desktop */
         .defect-table, .water-table, .dim-table, .gallery-table { width: 100%; border-collapse: collapse; margin-top: 20px; table-layout: fixed; }
         th, td { border: 1px solid #ccc; padding: 8px; vertical-align: middle; word-wrap: break-word; }
         th { background: #333; color: white; text-align: center; }
-        
+       
         /* Column Widths (Desktop) */
         .col-id { width: 40px; text-align: center; font-weight: bold; }
-        .col-img { width: 35%; text-align: center; } 
-        .col-desc { width: 35%; } 
+        .col-img { width: 35%; text-align: center; }
+        .col-desc { width: 35%; }
         .col-status { width: 20%; text-align: center; }
-        
-        .w-col-lbl { width: 25%; font-weight: bold; } 
-        .w-col-img { width: 50%; text-align: center; } 
+       
+        .w-col-lbl { width: 25%; font-weight: bold; }
+        .w-col-img { width: 50%; text-align: center; }
         .w-col-val { width: 25%; text-align: right; }
-        
+       
         .grey-header { background-color: #e9ecef; padding: 10px; text-align: center; font-weight: bold; text-transform: uppercase; font-size: 1.1em; margin: 20px 0 10px 0; border-radius: 4px; outline: none; min-width: 300px; }
-
         /* Images & Inputs */
         .img-placeholder {
             background: #f8f9fa; height: 160px; border: 2px dashed #ccc; border-radius: 4px;
@@ -71,54 +68,48 @@
         .img-placeholder img { width: 100%; height: 100%; object-fit: cover; display: none; position: absolute; top:0; left:0; }
         .action-btns { display: flex; gap: 5px; z-index: 10; justify-content: center; }
         .action-btn { background: #fff; color: #333; padding: 6px 12px; border-radius: 15px; font-size: 12px; border: 1px solid #ccc; cursor: pointer; }
-
         textarea { width: 100%; height: 120px; resize: none; padding: 8px; border: 1px solid #ddd; border-radius: 4px; font-family: inherit; font-size: 14px;}
         select { padding: 8px; width: 100%; margin-bottom: 5px; font-weight: bold; border-radius: 4px; border: 1px solid #ccc; font-size: 14px;}
-        
+       
         .val-input { width: 80px; padding: 8px; font-size: 1.1em; text-align: center; border: 1px solid #ccc; border-radius: 4px; font-weight: bold; }
         .brand-input { width: 100%; padding: 8px; font-size: 1em; border: 1px solid #ccc; border-radius: 4px; }
         .dim-input-text { width: 100%; border: none; padding: 5px; font-family: inherit; font-size: 14px; text-align: center; }
         .dim-input-num { width: 100%; border: none; padding: 5px; font-family: inherit; font-size: 14px; text-align: center; background: #f9f9f9; }
-        
+       
         /* Total Area Red */
         .dim-total-val { color: red !important; font-weight: 900 !important; font-size: 1.2em !important; }
-
         /* PDF Hidden Container */
-        #print-container { display: none; width: 794px; background: #555; } 
-        
+        #print-container { display: none; width: 794px; background: #555; }
+       
         /* PDF Page Styling */
-        /* IMPORTANT: Height is auto to prevent cutting, padding handles spacing */
-        .pdf-page { 
-            width: 794px; 
-            min-height: 1122px; 
-            height: auto; 
-            padding: 40px; 
-            background: white; 
-            margin-bottom: 0; 
-            position: relative; 
+        .pdf-page {
+            width: 794px;
+            min-height: 1122px;
+            height: auto;
+            padding: 40px;
+            background: white;
+            margin-bottom: 0;
+            position: relative;
             page-break-after: always;
         }
         .pdf-page-full { padding: 0; margin: 0; width: 794px; height: 1122px; position: relative; background: white; page-break-after: always; }
         .pdf-page-full img { width: 100%; height: 100%; object-fit: fill; display: block; }
-        
+       
         .pdf-title { text-align: center; border-bottom: 3px solid #333; padding-bottom: 10px; margin-top: 0; text-transform: uppercase; font-size: 22px; }
         .pdf-text { white-space: pre-wrap; font-size: 13px; line-height: 1.4; display: block; }
         .pdf-val { font-weight: bold; font-size: 1.2em; text-align: center; display: block;}
-
         /* PDF Table Tweaks */
         .pdf-page table { width: 100% !important; table-layout: fixed; border-collapse: collapse; }
         .pdf-page th, .pdf-page td { border: 1px solid #ccc; padding: 8px; vertical-align: middle; }
-
         /* Camera Modal */
         #camera-modal { display: none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:999; align-items:center; justify-content:center; }
         .camera-content { background:white; padding:15px; border-radius:10px; width:95%; max-width:500px; text-align:center; }
         video { width:100%; border-radius:8px; background:#000; margin-bottom:15px; }
         .btn-snap { background:#dc3545; color: white; padding: 10px 20px; border:none; border-radius:50px; margin:5px;}
         .btn-close { background:#6c757d; color: white; padding: 10px 20px; border:none; border-radius:50px; margin:5px;}
-
         /* =========================================
-           MOBILE OPTIMIZATIONS
-           ========================================= */
+            MOBILE OPTIMIZATIONS
+            ========================================= */
         @media screen and (max-width: 768px) {
             body { padding: 10px; overflow-x: hidden; width: 100vw; }
             .controls { padding: 0; margin: -10px -10px 15px -10px; border-radius: 0 0 15px 15px; border: none; overflow: visible; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
@@ -130,20 +121,15 @@
             .editable-title { font-size: 1.2rem !important; min-width: auto; width: 100%; margin-bottom: 10px; }
             .delete-section-btn { font-size: 0 !important; width: 30px; height: 30px; padding: 0; border-radius: 50%; display: flex; align-items: center; justify-content: center; top: 8px; right: 8px; }
             .delete-section-btn::before { content: '\f1f8'; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 12px; color: white; }
-
-            /* --- Table Reset for Mobile (SCOPED TO WORKSPACE) --- */
-            /* This ensures PDF (which is outside workspace) ignores these rules */
-            #workspace-container table, 
-            #workspace-container thead, 
-            #workspace-container tbody, 
-            #workspace-container th, 
-            #workspace-container td, 
+            #workspace-container table,
+            #workspace-container thead,
+            #workspace-container tbody,
+            #workspace-container th,
+            #workspace-container td,
             #workspace-container tr { display: block; width: 100%; min-width: 0 !important; }
-            
-            #workspace-container th { display: none; } 
+           
+            #workspace-container th { display: none; }
             #workspace-container td { border: none; padding: 0; }
-
-            /* --- DEFECT CARD (SCOPED) --- */
             #workspace-container .defect-table tr { background: #fff; border: 1px solid #eee; margin-bottom: 10px; border-radius: 8px; padding: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.03); display: grid; grid-template-columns: 1fr 1fr; grid-template-areas: "header header" "img controls" "desc desc"; gap: 10px; }
             #workspace-container .defect-table td.col-id { grid-area: header; font-size: 12px; font-weight: 800; color: #555; border-bottom: 1px solid #f0f0f0; padding-bottom: 4px; margin-bottom: 4px; }
             #workspace-container .defect-table td.col-id::before { content: "ITEM #"; color: #aaa; margin-right: 4px; }
@@ -160,33 +146,30 @@
             #workspace-container .defect-table .btn-delete-row::before { content: '\f2ed'; font-family: "Font Awesome 6 Free"; font-weight: 400; font-size: 16px; color: #dc3545; }
             #workspace-container .defect-table td:nth-child(3) { grid-area: desc; }
             #workspace-container .defect-table textarea { height: 50px; font-size: 13px; padding: 6px; border: 1px solid #eee; background: #fafafa; width: 100%; }
-
-            /* --- DIMENSIONS TABLE (SCOPED) --- */
             #workspace-container .dim-table thead { display: grid !important; grid-template-columns: 28% 18% 18% 22% 14%; gap: 4px; border-bottom: 2px solid #ccc; margin-bottom: 5px; background: #f8f9fa; }
             #workspace-container .dim-table thead tr { display: contents; }
             #workspace-container .dim-table th { display: flex !important; align-items: center; justify-content: center; font-size: 9px !important; font-weight: 800 !important; color: #333 !important; background: transparent !important; border: none !important; padding: 8px 0 !important; text-transform: uppercase; text-align: center !important; white-space: pre-wrap !important; line-height: 1.1; }
             #workspace-container .dim-table th:first-child { justify-content: flex-start; padding-left: 5px !important; }
-            #workspace-container .dim-table thead tr:nth-child(2) th:nth-child(1), 
-            #workspace-container .dim-table thead tr:nth-child(2) th:nth-child(2), 
+            #workspace-container .dim-table thead tr:nth-child(2) th:nth-child(1),
+            #workspace-container .dim-table thead tr:nth-child(2) th:nth-child(2),
             #workspace-container .dim-table thead tr:first-child th:nth-child(3) { color: transparent !important; position: relative; }
-            
+           
             #workspace-container .dim-table thead tr:nth-child(2) th:nth-child(1)::after { content: "LENGTH\A(ft)"; white-space: pre; color: #333; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
             #workspace-container .dim-table thead tr:nth-child(2) th:nth-child(2)::after { content: "WIDTH\A(ft)"; white-space: pre; color: #333; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
             #workspace-container .dim-table thead tr:first-child th:nth-child(3)::after { content: "AREA\A(sft)"; white-space: pre; color: #333; position: absolute; top: 50%; left: 65%; transform: translate(-50%, -50%); text-align: center; }
-            
-            #workspace-container .dim-table thead tr:first-child th:nth-child(1) { order: 1; } 
-            #workspace-container .dim-table thead tr:first-child th:nth-child(2) { display: none !important; } 
-            #workspace-container .dim-table thead tr:nth-child(2) th:nth-child(1) { order: 2; } 
-            #workspace-container .dim-table thead tr:nth-child(2) th:nth-child(2) { order: 3; } 
-            #workspace-container .dim-table thead tr:first-child th:nth-child(3) { order: 4; } 
+           
+            #workspace-container .dim-table thead tr:first-child th:nth-child(1) { order: 1; }
+            #workspace-container .dim-table thead tr:first-child th:nth-child(2) { display: none !important; }
+            #workspace-container .dim-table thead tr:nth-child(2) th:nth-child(1) { order: 2; }
+            #workspace-container .dim-table thead tr:nth-child(2) th:nth-child(2) { order: 3; }
+            #workspace-container .dim-table thead tr:first-child th:nth-child(3) { order: 4; }
             #workspace-container .dim-table thead tr:first-child th:nth-child(4) { order: 5; }
-            
+           
             #workspace-container .dim-table tbody tr { display: grid !important; grid-template-columns: 28% 18% 18% 22% 14%; gap: 4px; margin-bottom: 5px; border-bottom: 1px solid #f0f0f0; padding-bottom: 5px; }
-            
-            /* WHITE BACKGROUND FIX */
+           
             .dim-input-text { width: 100%; font-size: 11px; padding: 6px 2px; border: 1px solid #ddd; background: #fff !important; border-radius: 4px; font-weight: 600; text-align: left; }
             .dim-input-num { width: 100%; font-size: 11px; padding: 6px 2px; border: 1px solid #ddd; background: #fff !important; border-radius: 4px; text-align: center; }
-            
+           
             #workspace-container .dim-table td:last-child { display: flex; align-items: center; justify-content: center; padding-right: 5px; }
             #workspace-container .dim-table button { width: 100%; padding: 6px; font-size: 14px; background: #fee2e2; color: #dc3545; border: 1px solid #f5c6cb; border-radius: 4px; }
             #workspace-container .dim-table tfoot tr { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; border-radius: 4px; padding: 10px; margin-top: 5px; gap: 20px; }
@@ -194,66 +177,56 @@
             #workspace-container .dim-table tfoot td:nth-child(2) { flex-grow: 1; }
             #workspace-container .dim-table tfoot input { width: 100%; text-align: right !important; background: white; border: 1px solid #ddd; padding: 6px 8px; border-radius: 4px; font-weight: bold; }
             #workspace-container .dim-table tfoot td:last-child { display: none; }
-
-            /* --- WATER & BRANDS (SCOPED) --- */
-            #workspace-container .water-table tr { 
-                display: flex; 
-                flex-wrap: wrap; /* Allow items to wrap to a new line */
-                align-items: center; 
-                gap: 10px; 
-                margin-bottom: 10px; 
-                border: 1px solid #f0f0f0; 
-                padding: 5px; 
-                border-radius: 6px; 
+            #workspace-container .water-table tr {
+                display: flex;
+                flex-wrap: wrap;
+                align-items: center;
+                gap: 10px;
+                margin-bottom: 10px;
+                border: 1px solid #f0f0f0;
+                padding: 5px;
+                border-radius: 6px;
             }
-            
-            /* Make label and value take half width on the top row */
-            #workspace-container .water-table .w-col-lbl { 
-                width: calc(50% - 5px); 
-                font-size: 11px; 
-                font-weight: bold; 
+           
+            #workspace-container .water-table .w-col-lbl {
+                width: calc(50% - 5px);
+                font-size: 11px;
+                font-weight: bold;
             }
-            #workspace-container .water-table .w-col-val { 
-                width: calc(50% - 5px); 
+            #workspace-container .water-table .w-col-val {
+                width: calc(50% - 5px);
                 text-align: right;
             }
-            
-            /* Make image container full width and move to the next row */
-            #workspace-container .water-table .w-col-img { 
-                width: 100%; 
-                flex-grow: 0; 
-                order: 3; /* Force to bottom */
+           
+            #workspace-container .water-table .w-col-img {
+                width: 100%;
+                flex-grow: 0;
+                order: 3;
             }
-            
-            /* Make the placeholder taller and wider */
-            #workspace-container .water-table .img-placeholder { 
-                height: 120px !important; /* Increased height for a wider look */
-                width: 100% !important; 
+           
+            #workspace-container .water-table .img-placeholder {
+                height: 120px !important;
+                width: 100% !important;
             }
             .val-input { width: 100%; font-size: 12px; padding: 4px; height: 30px; }
-            
-            /* --- Fix for Brands Table so it doesn't wrap --- */
-            #workspace-container .brand-table tr { 
-                flex-wrap: nowrap; 
-                justify-content: space-between; 
-                gap: 5px; 
+           
+            #workspace-container .brand-table tr {
+                flex-wrap: nowrap;
+                justify-content: space-between;
+                gap: 5px;
             }
-            #workspace-container .brand-table .w-col-lbl { 
-                width: 50% !important; 
-                font-size: 12px; 
-                text-align: left !important; 
-                padding-right: 5px !important; 
-                white-space: normal; 
+            #workspace-container .brand-table .w-col-lbl {
+                width: 50% !important;
+                font-size: 12px;
+                text-align: left !important;
+                padding-right: 5px !important;
+                white-space: normal;
             }
             #workspace-container .brand-table td:last-child { width: 50% !important; }
             .brand-input { width: 100%; font-size: 12px; padding: 8px; border: 1px solid #ddd; border-radius: 4px; }
-
-            /* --- GALLERY (SCOPED) --- */
             #workspace-container .gallery-table tr { display: flex; gap: 5px; margin-bottom: 5px; }
             #workspace-container .gallery-table td { width: 50%; }
             #workspace-container .gallery-table .img-placeholder { height: 100px !important; border-radius: 4px; }
-
-            /* Camera Full Screen */
             .camera-content { width: 100%; height: 100%; max-width: none; border-radius: 0; display: flex; flex-direction: column; justify-content: center; background: #000; color: #fff; }
             .camera-content h3 { display: none; }
             #video-feed { border: 2px solid #fff; max-height: 70vh; }
@@ -263,7 +236,6 @@
     </style>
 </head>
 <body>
-
     <div class="controls" data-html2canvas-ignore="true">
         <div class="mobile-toggle" onclick="toggleMenu()">
             <span><i class="fas fa-bars"></i> &nbsp; MENU / ADD PAGE</span>
@@ -278,9 +250,7 @@
             <button class="btn-dl" onclick="generatePDF(); closeMenu()">Download PDF</button>
         </div>
     </div>
-
     <img id="disclaimer-source" src="disclaimer.jpg" style="display:none;" crossorigin="anonymous">
-
     <div id="camera-modal">
         <div class="camera-content">
             <h3>Take Photo</h3>
@@ -292,19 +262,13 @@
             </div>
         </div>
     </div>
-
     <div id="workspace-container"></div>
-
     <div id="print-container"></div>
-
     <script>
-        let globalCounter = 0; 
+        let globalCounter = 0;
         let activeImageId = null;
         let stream = null;
-
         window.onload = function() { addDefectSection(); };
-
-        // --- MENU FUNCTIONS (MOBILE) ---
         function toggleMenu() {
             const list = document.getElementById('controls-list');
             const arrow = document.getElementById('menu-arrow');
@@ -317,7 +281,6 @@
                 arrow.classList.add('fa-chevron-down');
             }
         }
-
         function closeMenu() {
             const toggle = document.querySelector('.mobile-toggle');
             if (window.getComputedStyle(toggle).display !== 'none') {
@@ -328,8 +291,6 @@
                 arrow.classList.add('fa-chevron-down');
             }
         }
-
-        // --- 1. DEFECT SECTION ---
         function addDefectSection() {
             const sectionId = `section-${Date.now()}`;
             const div = document.createElement('div');
@@ -347,14 +308,12 @@
                 </div>
             `;
             document.getElementById('workspace-container').appendChild(div);
-            addRowToSection(sectionId); 
+            addRowToSection(sectionId);
         }
-
-        // --- 2. WATER SECTION ---
         function addWaterPage() {
             globalCounter++; const sId = `water-section-${Date.now()}`;
             const img1 = `w-img-${globalCounter}`; globalCounter++; const img2 = `w-img-${globalCounter}`;
-            
+           
             const div = document.createElement('div');
             div.className = 'report-section water-section';
             div.id = sId;
@@ -376,12 +335,9 @@
             document.getElementById('workspace-container').appendChild(div);
             div.scrollIntoView({behavior: 'smooth'});
         }
-
         function getBrandRow(lbl, val) {
             return `<tr><td class="w-col-lbl" style="text-align:right; padding-right:20px;">${lbl}</td><td colspan="2"><input type="text" class="brand-input" value="${val}"></td></tr>`;
         }
-
-        // --- 3. DIMENSIONS SECTION (UPDATED with classes) ---
         function addDimensionsPage() {
             const sId = `dim-section-${Date.now()}`;
             const div = document.createElement('div');
@@ -430,7 +386,6 @@
             addDimRow(sId);
             div.scrollIntoView({behavior: 'smooth'});
         }
-
         function addDimRow(sId) {
             const tbody = document.getElementById(`table-${sId}`).querySelector('tbody');
             const row = tbody.insertRow();
@@ -442,7 +397,6 @@
                 <td><button onclick="delDimRow(this, '${sId}')"><i class="fas fa-trash"></i></button></td>
             `;
         }
-
         function calcDim(sId, input) {
             const row = input.closest('tr');
             const inputs = row.querySelectorAll('input[type="number"]');
@@ -450,14 +404,13 @@
             const w = parseFloat(inputs[1].value) || 0;
             const area = (l * w).toFixed(2);
             row.querySelector('.area-val').value = area;
-            
+           
             let total = 0;
             document.getElementById(`table-${sId}`).querySelectorAll('.area-val').forEach(inp => {
                 total += parseFloat(inp.value) || 0;
             });
             document.getElementById(`total-${sId}`).innerText = total.toFixed(2);
         }
-
         function delDimRow(btn, sId) {
             btn.closest('tr').remove();
             let total = 0;
@@ -466,14 +419,12 @@
             });
             document.getElementById(`total-${sId}`).innerText = total.toFixed(2);
         }
-
-        // --- 4. GALLERY SECTION ---
         function addGalleryPage() {
             globalCounter++; const img1 = `gal-${globalCounter}`;
             globalCounter++; const img2 = `gal-${globalCounter}`;
             globalCounter++; const img3 = `gal-${globalCounter}`;
             globalCounter++; const img4 = `gal-${globalCounter}`;
-            
+           
             const sId = `gallery-section-${Date.now()}`;
             const div = document.createElement('div');
             div.className = 'report-section gallery-section';
@@ -495,11 +446,8 @@
             document.getElementById('workspace-container').appendChild(div);
             div.scrollIntoView({behavior: 'smooth'});
         }
-
-
-        // --- COMMON FUNCTIONS ---
         function removeSection(id) { if(confirm("Delete this page?")) document.getElementById(id).remove(); }
-        
+       
         function addRowToSection(sid) {
             globalCounter++;
             const tbody = document.getElementById(sid).querySelector('tbody');
@@ -523,9 +471,8 @@
             btn.closest('tr').remove();
             document.getElementById(sid).querySelectorAll('tbody tr .col-id').forEach((c,i) => c.innerText = i+1);
         }
-
         function getImgHtml(id, isLandscape) {
-            const boxStyle = isLandscape ? 'height:120px !important; width:100% !important;' : ''; 
+            const boxStyle = isLandscape ? 'height:120px !important; width:100% !important;' : '';
             const imgStyle = isLandscape ? 'width:100% !important; height:100% !important; object-fit:cover;' : '';
             return `
             <div class="img-placeholder" style="${boxStyle}">
@@ -542,14 +489,13 @@
             </div>
             <input type="file" id="f-${id}" accept="image/*" style="display:none" onchange="fileSel(this,'${id}')">`;
         }
-
         function fileSel(inp, id) { if(inp.files[0]) { const r = new FileReader(); r.onload=e=>setImg(id,e.target.result); r.readAsDataURL(inp.files[0]); } }
         async function cam(id) { activeImageId = id; try { stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}); document.getElementById('video-feed').srcObject=stream; document.getElementById('camera-modal').style.display='flex'; } catch(e){alert("Camera Error: Use HTTPS");} }
         function snapPhoto() { const v=document.getElementById('video-feed'); const c=document.getElementById('canvas'); c.width=v.videoWidth; c.height=v.videoHeight; c.getContext('2d').drawImage(v,0,0); setImg(activeImageId,c.toDataURL('image/jpeg')); closeCamera(); }
         function closeCamera() { document.getElementById('camera-modal').style.display='none'; if(stream) stream.getTracks().forEach(t=>t.stop()); }
-        
-        function setImg(id,src) { 
-            const i=document.getElementById(id); i.src=src; i.style.display='block'; 
+       
+        function setImg(id,src) {
+            const i=document.getElementById(id); i.src=src; i.style.display='block';
             document.getElementById(`btns-${id}`).style.display = 'none';
             document.getElementById(`retake-${id}`).style.display = 'block';
         }
@@ -557,80 +503,63 @@
             const i=document.getElementById(id); i.src = ""; i.style.display = 'none';
             document.getElementById(`btns-${id}`).style.display = 'flex';
             document.getElementById(`retake-${id}`).style.display = 'none';
-            document.getElementById(`f-${id}`).value = ""; 
+            document.getElementById(`f-${id}`).value = "";
         }
-
-        // --- 5. PDF GENERATOR (UPDATED LOGIC) ---
-        function generatePDF() {
+        // ========================================================
+        // UPDATED PDF GENERATOR (NOW MERGES 1.PDF AUTOMATICALLY)
+        // ========================================================
+        async function generatePDF() {
             const container = document.getElementById('print-container');
-            container.innerHTML = ''; 
-
-            const disImgSource = document.getElementById('disclaimer-source');
-            const disPage = document.createElement('div');
-            disPage.className = 'pdf-page-full'; 
-            disPage.innerHTML = `<img src="${disImgSource.src}" style="width:100%; height:100%; object-fit:fill;">`;
-            container.appendChild(disPage);
-            
+            container.innerHTML = '';
             const sections = document.querySelectorAll('.report-section');
-
             sections.forEach(section => {
-                // DEFECTS (Manual Chunking with Live Value Fix)
                 if (section.classList.contains('defect-section')) {
                     const title = section.querySelector('.editable-title').innerText;
-                    
-                    // Create a clone for PDF structure
                     const clone = section.cloneNode(true);
-                    
-                    // --- FIX FOR TEXTAREAS AND SELECTS: Read from ORIGINAL section ---
+                   
                     const origTextareas = section.querySelectorAll('textarea');
                     clone.querySelectorAll('textarea').forEach((ta, index) => {
-                        const s = document.createElement('div'); 
-                        s.className='pdf-text'; 
-                        s.innerText = origTextareas[index].value; // Grab live value
+                        const s = document.createElement('div');
+                        s.className='pdf-text';
+                        s.innerText = origTextareas[index].value;
                         ta.parentNode.replaceChild(s, ta);
                     });
-
                     const origSelects = section.querySelectorAll('select');
                     clone.querySelectorAll('select').forEach((sel, index) => {
-                        const s = document.createElement('div'); 
-                        s.className='pdf-val'; 
-                        const orig = origSelects[index]; // Grab live select element
+                        const s = document.createElement('div');
+                        s.className='pdf-val';
+                        const orig = origSelects[index];
                         if(orig.selectedIndex > 0) {
                             s.innerText = orig.options[orig.selectedIndex].text;
                             if(orig.value==='MAJOR') s.style.color='red'; else if(orig.value==='MINOR') s.style.color='green';
-                        } else { 
-                            s.innerText = ""; 
+                        } else {
+                            s.innerText = "";
                         }
                         sel.parentNode.replaceChild(s, sel);
                     });
-                    // ----------------------------------------------------------------
-
                     const rows = Array.from(clone.querySelectorAll('tbody tr'));
-                    const CHUNK_SIZE = 4; 
-
+                    const CHUNK_SIZE = 4;
                     for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
                         const chunk = rows.slice(i, i + CHUNK_SIZE);
                         const page = document.createElement('div');
-                        page.className = 'pdf-page'; 
-
+                        page.className = 'pdf-page';
                         if (i === 0) {
                             const h1 = document.createElement('h1');
                             h1.className = 'pdf-title'; h1.innerText = title;
                             page.appendChild(h1);
                         } else {
                             const h1 = document.createElement('h1');
-                            h1.className = 'pdf-title'; 
+                            h1.className = 'pdf-title';
                             h1.style.borderBottom = "1px solid #ccc";
                             h1.style.fontSize = "16px";
                             h1.style.color = "#666";
                             h1.innerText = title + " (Continued)";
                             page.appendChild(h1);
                         }
-
                         const table = document.createElement('table');
                         table.className = 'defect-table';
                         table.innerHTML = `<thead>${section.querySelector('thead').innerHTML}</thead><tbody></tbody>`;
-                        
+                       
                         chunk.forEach(r => {
                             r.querySelectorAll('button').forEach(b => b.remove());
                             r.querySelectorAll('.action-btns').forEach(d => d.remove());
@@ -644,125 +573,70 @@
                         container.appendChild(page);
                     }
                 }
-                
-                // DIMENSIONS (Manual Chunking with Footer Class Fix)
+               
                 else if (section.classList.contains('dim-section')) {
                     const title = section.querySelector('.editable-title').innerText;
                     const rows = Array.from(section.querySelectorAll('tbody tr'));
-                    const CHUNK_SIZE = 12; 
-
-                    // Clone Footer values first
+                    const CHUNK_SIZE = 12;
                     const totalVal = section.querySelector('.dim-total-val').innerText;
-                    
-                    // --- UPDATED SELECTION LOGIC using specific classes ---
                     const doorInput = section.querySelector('.door-input');
                     const ceilInput = section.querySelector('.ceil-input');
                     const doorVal = doorInput ? doorInput.value : "0.0 ft";
                     const ceilVal = ceilInput ? ceilInput.value : "0.0 ft";
-                    // ----------------------------------------------------
-
                     for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
                         const chunk = rows.slice(i, i + CHUNK_SIZE);
                         const page = document.createElement('div');
-                        page.className = 'pdf-page'; 
-
+                        page.className = 'pdf-page';
                         if (i === 0) {
                             const h1 = document.createElement('h1');
                             h1.className = 'pdf-title'; h1.innerText = title;
                             page.appendChild(h1);
                         } else {
                             const h1 = document.createElement('h1');
-                            h1.className = 'pdf-title'; 
+                            h1.className = 'pdf-title';
                             h1.style.borderBottom = "1px solid #ccc";
                             h1.style.fontSize = "16px";
                             h1.style.color = "#666";
                             h1.innerText = title + " (Continued)";
                             page.appendChild(h1);
                         }
-
                         const table = document.createElement('table');
                         table.className = 'dim-table';
-                        
-                        table.innerHTML = `
-                            <thead>
-                                <tr>
-                                    <th style="width:35%">SPACES</th>
-                                    <th style="width:20%">LENGTH(ft)</th>
-                                    <th style="width:20%">WIDTH(ft)</th>
-                                    <th style="width:25%">AREA(sft)</th>
-                                </tr>
-                            </thead>
-                            <tbody></tbody>
-                        `;
-
+                        table.innerHTML = `<thead><tr><th style="width:35%">SPACES</th><th style="width:20%">LENGTH(ft)</th><th style="width:20%">WIDTH(ft)</th><th style="width:25%">AREA(sft)</th></tr></thead><tbody></tbody>`;
                         chunk.forEach(origRow => {
                             const newRow = table.querySelector('tbody').insertRow();
                             const inputs = origRow.querySelectorAll('input');
-                            // Name
                             newRow.insertCell().innerText = inputs[0].value;
-                            // L
                             const cL = newRow.insertCell(); cL.innerText = inputs[1].value; cL.style.textAlign='center';
-                            // W
                             const cW = newRow.insertCell(); cW.innerText = inputs[2].value; cW.style.textAlign='center';
-                            // Area
                             const cA = newRow.insertCell(); cA.innerText = inputs[3].value; cA.style.textAlign='center'; cA.style.fontWeight='bold';
                         });
-
-                        // Append Footer ONLY to the last page of chunks
                         if (i + CHUNK_SIZE >= rows.length) {
                             const tfoot = document.createElement('tfoot');
                             tfoot.innerHTML = `
-                                <tr>
-                                    <td colspan="3" style="text-align:right; font-weight:bold;">TOTAL AREA(sft)</td>
-                                    <td class="dim-total-val" style="text-align:center;">${totalVal}</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="2" style="text-align:right; font-weight:bold;">DOOR HEIGHT</td>
-                                    <td colspan="2" style="font-weight:bold; padding-left:10px;">${doorVal}</td>
-                                </tr>
-                                <tr>
-                                    <td colspan="2" style="text-align:right; font-weight:bold;">CEILING HEIGHT</td>
-                                    <td colspan="2" style="font-weight:bold; padding-left:10px;">${ceilVal}</td>
-                                </tr>
-                            `;
+                                <tr><td colspan="3" style="text-align:right; font-weight:bold;">TOTAL AREA(sft)</td><td class="dim-total-val" style="text-align:center;">${totalVal}</td></tr>
+                                <tr><td colspan="2" style="text-align:right; font-weight:bold;">DOOR HEIGHT</td><td colspan="2" style="font-weight:bold; padding-left:10px;">${doorVal}</td></tr>
+                                <tr><td colspan="2" style="text-align:right; font-weight:bold;">CEILING HEIGHT</td><td colspan="2" style="font-weight:bold; padding-left:10px;">${ceilVal}</td></tr>`;
                             table.appendChild(tfoot);
                         }
-
                         page.appendChild(table);
                         container.appendChild(page);
                     }
                 }
-
                 else {
-                    // GENERIC CLONE (WATER, GALLERY) - Single Page
                     const page = document.createElement('div');
                     page.className = 'pdf-page';
                     const content = section.cloneNode(true);
-                    
                     content.querySelectorAll('button').forEach(b => b.remove());
-
-                    // Fix Alignment for Water
-                    content.querySelectorAll('.w-col-val').forEach(td => {
-                        td.style.textAlign = 'left'; 
-                    });
-                    
-                    // Fix Inputs to Text
+                    content.querySelectorAll('.w-col-val').forEach(td => { td.style.textAlign = 'left'; });
                     content.querySelectorAll('input').forEach(inp => {
                         const s = document.createElement('span'); s.innerText = inp.value;
-                        s.style.fontWeight = "bold"; s.style.display="block"; 
-                        
-                        if(inp.classList.contains('val-input')) {
-                             s.style.textAlign="left"; 
-                             s.style.paddingLeft="5px"; 
-                        } else {
-                             s.style.textAlign="center";
-                        }
-                        
-                        if(inp.classList.contains('val-input')) s.className='pdf-val';
+                        s.style.fontWeight = "bold"; s.style.display="block";
+                        if(inp.classList.contains('val-input')) { s.style.textAlign="left"; s.style.paddingLeft="5px"; }
+                        else { s.style.textAlign="center"; }
                         inp.parentNode.replaceChild(s, inp);
                     });
-                    
-                    // Handle Images
+                   
                     content.querySelectorAll('.img-placeholder').forEach(pl => {
                          pl.style.border = "none";
                          const img = pl.querySelector('img');
@@ -773,25 +647,77 @@
                              const retake = pl.querySelector('[id^="retake-"]'); if(retake) retake.remove();
                          } else { pl.innerHTML = '<span style="color:#ccc">-</span>'; pl.style.height='50px';}
                     });
-
                     page.appendChild(content);
                     container.appendChild(page);
                 }
             });
-
             const opt = {
-                margin: 0, 
-                filename: 'Inspection_Report.pdf',
+                margin: 0,
+                filename: 'Temp_Report.pdf',
                 image: { type: 'jpeg', quality: 0.98 },
                 html2canvas: { scale: 2, useCORS: true, scrollY: 0 },
                 jsPDF: { unit: 'px', format: [794, 1123], orientation: 'portrait' },
                 pagebreak: { mode: ['css', 'legacy'] }
             };
-
             container.style.display = 'block';
-            html2pdf().set(opt).from(container).save().then(() => {
+            try {
+                // 1. Generate the report PDF as a Blob
+                const reportBlob = await html2pdf().set(opt).from(container).output('blob');
                 container.style.display = 'none';
-            });
+                // 2. Fetch the external 1.pdf
+                const existingPdfBytes = await fetch('1.pdf').then(res => {
+                    if(!res.ok) throw new Error("Could not find 1.pdf in the folder.");
+                    return res.arrayBuffer();
+                });
+                // 3. Load both PDFs into PDF-LIB
+                const { PDFDocument } = PDFLib;
+                const finalPdf = await PDFDocument.create();
+               
+                // Define standard A4 size in points (portrait)
+                const a4Width = 595.28;
+                const a4Height = 841.89;
+               
+                // Add pages from 1.pdf (resized to A4)
+                const externalPdfDoc = await PDFDocument.load(existingPdfBytes);
+                for (let i = 0; i < externalPdfDoc.getPageCount(); i++) {
+                    const [embeddedPage] = await finalPdf.embedPdf(externalPdfDoc, [i]);
+                    const { width: origWidth, height: origHeight } = embeddedPage.size();
+                    const scale = Math.min(a4Width / origWidth, a4Height / origHeight);
+                    const scaledWidth = origWidth * scale;
+                    const scaledHeight = origHeight * scale;
+                    const x = (a4Width - scaledWidth) / 2;
+                    const y = (a4Height - scaledHeight) / 2;
+                    const newPage = finalPdf.addPage([a4Width, a4Height]);
+                    newPage.drawPage(embeddedPage, { x, y, width: scaledWidth, height: scaledHeight });
+                }
+               
+                // Add pages from generated report (resized to A4)
+                const reportArrayBuffer = await reportBlob.arrayBuffer();
+                const reportPdfDoc = await PDFDocument.load(reportArrayBuffer);
+                for (let i = 0; i < reportPdfDoc.getPageCount(); i++) {
+                    const [embeddedPage] = await finalPdf.embedPdf(reportPdfDoc, [i]);
+                    const { width: origWidth, height: origHeight } = embeddedPage.size();
+                    const scale = Math.min(a4Width / origWidth, a4Height / origHeight);
+                    const scaledWidth = origWidth * scale;
+                    const scaledHeight = origHeight * scale;
+                    const x = (a4Width - scaledWidth) / 2;
+                    const y = (a4Height - scaledHeight) / 2;
+                    const newPage = finalPdf.addPage([a4Width, a4Height]);
+                    newPage.drawPage(embeddedPage, { x, y, width: scaledWidth, height: scaledHeight });
+                }
+               
+                // 4. Save and Download
+                const finalPdfBytes = await finalPdf.save();
+                const downloadBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
+                const link = document.createElement('a');
+                link.href = URL.createObjectURL(downloadBlob);
+                link.download = 'Inspection_Report_Full.pdf';
+                link.click();
+            } catch (err) {
+                console.error(err);
+                alert("Error combining PDFs: " + err.message + "\n\nNote: For 1.pdf to work, it must be in the same folder as this HTML file and you must be running through a server (not just double-clicking the file).");
+                container.style.display = 'none';
+            }
         }
     </script>
 </body>
