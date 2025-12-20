@@ -556,20 +556,21 @@
             document.getElementById(`retake-${id}`).style.display = 'none';
             document.getElementById(`f-${id}`).value = "";
         }
-        // Updated Watermark Helper Function
+        // Watermark Helper
         function injectWatermark(pageElement) {
             const wm = document.createElement('img');
             wm.src = 'mark.png';
             wm.className = 'watermark';
-            pageElement.prepend(wm); // Prepend to place behind content
+            pageElement.prepend(wm);
         }
+
         // ========================================================
-        // UPDATED PDF GENERATOR (NOW MERGES 1.PDF AUTOMATICALLY)
+        // PDF GENERATOR – NOW APPENDS 1.pdf (front) AND 2.pdf (end)
         // ========================================================
         async function generatePDF() {
             const container = document.getElementById('print-container');
             container.innerHTML = '';
-            // --- Cover Page Logic Start ---
+            // --- Cover Page ---
             const coverPage = document.createElement('div');
             coverPage.className = 'pdf-page';
             injectWatermark(coverPage);
@@ -590,10 +591,12 @@
                 </div>
             `;
             container.appendChild(coverPage);
-            // --- Cover Page Logic End ---
+
+            // --- Dynamic Sections (Defects, Dimensions, Water, Gallery, etc.) ---
             const sections = document.querySelectorAll('.report-section');
             sections.forEach(section => {
                 if(section.classList.contains('client-section')) return;
+                // ... [existing section handling code unchanged] ...
                 if (section.classList.contains('defect-section')) {
                     const title = section.querySelector('.editable-title').innerText;
                     const clone = section.cloneNode(true);
@@ -735,6 +738,7 @@
                     container.appendChild(page);
                 }
             });
+
             const opt = {
                 margin: 0,
                 filename: 'Temp_Report.pdf',
@@ -747,42 +751,53 @@
             try {
                 const reportBlob = await html2pdf().set(opt).from(container).output('blob');
                 container.style.display = 'none';
-                const existingPdfBytes = await fetch('1.pdf').then(res => {
-                    if(!res.ok) throw new Error("Could not find 1.pdf in the folder.");
-                    return res.arrayBuffer();
-                });
+
                 const { PDFDocument } = PDFLib;
                 const finalPdf = await PDFDocument.create();
                 const a4Width = 595.28;
                 const a4Height = 841.89;
-              
-                const externalPdfDoc = await PDFDocument.load(existingPdfBytes);
-                for (let i = 0; i < externalPdfDoc.getPageCount(); i++) {
-                    const [embeddedPage] = await finalPdf.embedPdf(externalPdfDoc, [i]);
-                    const { width: origWidth, height: origHeight } = embeddedPage.size();
-                    const scale = Math.min(a4Width / origWidth, a4Height / origHeight);
-                    const scaledWidth = origWidth * scale;
-                    const scaledHeight = origHeight * scale;
-                    const x = (a4Width - scaledWidth) / 2;
-                    const y = (a4Height - scaledHeight) / 2;
-                    const newPage = finalPdf.addPage([a4Width, a4Height]);
-                    newPage.drawPage(embeddedPage, { x, y, width: scaledWidth, height: scaledHeight });
+
+                // Helper to embed external PDF pages (scaled & centered on A4)
+                async function embedExternalPdf(pdfUrl) {
+                    const bytes = await fetch(pdfUrl).then(res => {
+                        if (!res.ok) throw new Error(`Could not load ${pdfUrl}`);
+                        return res.arrayBuffer();
+                    });
+                    const extDoc = await PDFDocument.load(bytes);
+                    for (let i = 0; i < extDoc.getPageCount(); i++) {
+                        const [embeddedPage] = await finalPdf.embedPdf(extDoc, [i]);
+                        const { width: origW, height: origH } = embeddedPage.size();
+                        const scale = Math.min(a4Width / origW, a4Height / origH);
+                        const scaledW = origW * scale;
+                        const scaledH = origH * scale;
+                        const x = (a4Width - scaledW) / 2;
+                        const y = (a4Height - scaledH) / 2;
+                        const newPage = finalPdf.addPage([a4Width, a4Height]);
+                        newPage.drawPage(embeddedPage, { x, y, width: scaledW, height: scaledH });
+                    }
                 }
-              
+
+                // 1.pdf → at the beginning (after cover)
+                await embedExternalPdf('1.pdf');
+
+                // Dynamic report pages
                 const reportArrayBuffer = await reportBlob.arrayBuffer();
                 const reportPdfDoc = await PDFDocument.load(reportArrayBuffer);
                 for (let i = 0; i < reportPdfDoc.getPageCount(); i++) {
                     const [embeddedPage] = await finalPdf.embedPdf(reportPdfDoc, [i]);
-                    const { width: origWidth, height: origHeight } = embeddedPage.size();
-                    const scale = Math.min(a4Width / origWidth, a4Height / origHeight);
-                    const scaledWidth = origWidth * scale;
-                    const scaledHeight = origHeight * scale;
-                    const x = (a4Width - scaledWidth) / 2;
-                    const y = (a4Height - scaledHeight) / 2;
+                    const { width: origW, height: origH } = embeddedPage.size();
+                    const scale = Math.min(a4Width / origW, a4Height / origH);
+                    const scaledW = origW * scale;
+                    const scaledH = origH * scale;
+                    const x = (a4Width - scaledW) / 2;
+                    const y = (a4Height - scaledH) / 2;
                     const newPage = finalPdf.addPage([a4Width, a4Height]);
-                    newPage.drawPage(embeddedPage, { x, y, width: scaledWidth, height: scaledHeight });
+                    newPage.drawPage(embeddedPage, { x, y, width: scaledW, height: scaledH });
                 }
-              
+
+                // 2.pdf → at the very end
+                await embedExternalPdf('2.pdf');
+
                 const finalPdfBytes = await finalPdf.save();
                 const downloadBlob = new Blob([finalPdfBytes], { type: 'application/pdf' });
                 const link = document.createElement('a');
